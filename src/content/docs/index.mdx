@@ -1,40 +1,133 @@
 ---
-title: Welcome to Starlight
-description: Get started building your docs site with Starlight.
-template: splash # Remove or comment out this line to display the site sidebar on this page.
-hero:
-  tagline: Congrats on setting up a new Starlight project!
-  image:
-    file: ../../assets/houston.webp
-  actions:
-    - text: Example Guide
-      link: /guides/example/
-      icon: right-arrow
-    - text: Read the Starlight docs
-      link: https://starlight.astro.build
-      icon: external
-      variant: minimal
+title: homeDNS docs
+description: Build, operate, and secure the homeDNS DNS server.
+tableOfContents: false
+prev: false
+next: false
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+<div class="of-index">
+  <p class="of-eyebrow">// Documentation</p>
 
-## Next steps
+  <h1 id="overview" class="of-title"><span>homeDNS</span> docs</h1>
 
-<CardGrid stagger>
-	<Card title="Update content" icon="pencil">
-		Edit `src/content/docs/index.mdx` to see this page change.
-	</Card>
-	<Card title="Change page layout" icon="document">
-		Delete `template: splash` in `src/content/docs/index.mdx` to display a
-		sidebar on this page.
-	</Card>
-	<Card title="Add new content" icon="add-document">
-		Add Markdown or MDX files to `src/content/docs` to create new pages.
-	</Card>
-	<Card title="Configure your site" icon="setting">
-		Edit your `sidebar` and other config in `astro.config.mjs`.
-	</Card>
-	<Card title="Read the docs" icon="open-book">
-		Learn more in [the Starlight Docs](https://starlight.astro.build/).
-	</Card>
-</CardGrid>
+  <div class="of-lead">Everything you need to install, configure, and operate homeDNS — a modern DNS platform with authoritative zones, conditional forwarding, filtering, and an operator-first management plane.</div>
+
+  <div class="of-stats">
+    <div class="of-stat">
+      <span class="of-stat-index">01</span>
+      <span class="of-stat-value">Do53 + DoT + DoH</span>
+      <span class="of-stat-label">Core protocols</span>
+    </div>
+    <div class="of-stat">
+      <span class="of-stat-index">02</span>
+      <span class="of-stat-value">5 strategies</span>
+      <span class="of-stat-label">Forwarding modes</span>
+    </div>
+    <div class="of-stat">
+      <span class="of-stat-index">03</span>
+      <span class="of-stat-value">RFC 2136</span>
+      <span class="of-stat-label">Dynamic DNS updates</span>
+    </div>
+    <div class="of-stat">
+      <span class="of-stat-index">04</span>
+      <span class="of-stat-value">REST + SSE</span>
+      <span class="of-stat-label">Management APIs</span>
+    </div>
+  </div>
+
+  <section class="of-group">
+    <p class="of-group-kicker">[ 01 · Getting Started ]</p>
+    <div class="of-grid of-grid-two">
+      <a class="of-item" href="#overview">
+        <span class="of-item-index">01</span>
+        <span class="of-item-copy">
+          <span class="of-item-title">Overview</span>
+          <span class="of-item-desc">Product overview, core capabilities, and documentation map.</span>
+        </span>
+      </a>
+      <a class="of-item" href="/guides/quick-start/">
+        <span class="of-item-index">02</span>
+        <span class="of-item-copy">
+          <span class="of-item-title">Getting Started</span>
+          <span class="of-item-desc">Installation, first run, local verification, and TLS test flow.</span>
+        </span>
+      </a>
+      <a class="of-item" href="/guides/configuration/">
+        <span class="of-item-index">03</span>
+        <span class="of-item-copy">
+          <span class="of-item-title">Configuration</span>
+          <span class="of-item-desc">YAML reference for listeners, forwarding, filtering, ACLs, and management.</span>
+        </span>
+      </a>
+    </div>
+  </section>
+
+  <section class="of-group">
+    <p class="of-group-kicker">[ 02 · Operations ]</p>
+    <div class="of-grid">
+      <a class="of-item" href="/operations/runbook/">
+        <span class="of-item-index">01</span>
+        <span class="of-item-copy">
+          <span class="of-item-title">Runbook</span>
+          <span class="of-item-desc">Health checks, day-2 ops, failure recovery, and backup guidance.</span>
+        </span>
+      </a>
+      <a class="of-item" href="/operations/deployment/">
+        <span class="of-item-index">02</span>
+        <span class="of-item-copy">
+          <span class="of-item-title">Deployment</span>
+          <span class="of-item-desc">Systemd, Docker, Kubernetes, and Cloudflare Pages docs deployment.</span>
+        </span>
+      </a>
+      <a class="of-item" href="/operations/dynamic-dns/">
+        <span class="of-item-index">03</span>
+        <span class="of-item-copy">
+          <span class="of-item-title">Dynamic DNS</span>
+          <span class="of-item-desc">RFC 2136 policies, TSIG, DHCP integration, and troubleshooting.</span>
+        </span>
+      </a>
+    </div>
+  </section>
+
+  <section class="of-group">
+    <p class="of-group-kicker">[ 03 · Reference ]</p>
+    <div class="of-grid">
+      <a class="of-item" href="/reference/management-api/">
+        <span class="of-item-index">01</span>
+        <span class="of-item-copy">
+          <span class="of-item-title">Management API</span>
+          <span class="of-item-desc">Auth model, endpoint groups, SSE channels, and wire-format notes.</span>
+        </span>
+      </a>
+      <a class="of-item" href="/reference/security-model/">
+        <span class="of-item-index">02</span>
+        <span class="of-item-copy">
+          <span class="of-item-title">Security Model</span>
+          <span class="of-item-desc">Trust boundaries and controls across data plane and management plane.</span>
+        </span>
+      </a>
+      <a class="of-item" href="/reference/release-checklist/">
+        <span class="of-item-index">03</span>
+        <span class="of-item-copy">
+          <span class="of-item-title">Release Checklist</span>
+          <span class="of-item-desc">Build, security, and functional gates before release tags.</span>
+        </span>
+      </a>
+    </div>
+  </section>
+
+  <section class="of-install">
+    <div class="of-install-bar">
+      <span class="of-term-dots">
+        <span class="of-term-dot of-term-dot-r"></span>
+        <span class="of-term-dot of-term-dot-y"></span>
+        <span class="of-term-dot of-term-dot-g"></span>
+      </span>
+      <span class="of-term-label">bash — ~/homeDNS</span>
+    </div>
+    <pre class="of-install-pre"><code><span class="of-prompt-dir">~/homeDNS</span><span class="of-prompt"> $</span>{' git clone https://github.com/x86txt/homeDNS.git && cd homeDNS && make build'}</code></pre>
+  </section>
+
+  <p class="of-end">// End of index //</p>
+</div>

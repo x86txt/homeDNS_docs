@@ -1,5 +1,5 @@
 {
-  "name": "",
+  "name": "homedns-docs",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@astrojs/starlight": "^0.38.4",
+    "@fontsource-variable/geist": "^5.2.8",
+    "@fontsource-variable/geist-mono": "^5.2.7",
     "astro": "^6.1.9",
     "sharp": "^0.34.5"
   }
