@@ -7,6 +7,7 @@ export default defineConfig({
 	site: 'https://docs.homedns.app',
 	integrations: [
 		starlight({
+			disable404Route: true,
 			title: 'homeDNS Docs',
 			description: 'Documentation for the homeDNS modern multi-protocol DNS server.',
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/x86txt/homeDNS' }],
