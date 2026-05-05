@@ -8,7 +8,7 @@
 #
 # Prerequisites:
 #   - The Cloudflare Pages GitHub App must be installed on x86txt's GitHub account.
-#     Install once at: https://github.com/apps/cloudflare-pages
+#     Install once at: https://github.com/apps/cloudflare-workers-and-pages
 #   - jq must be installed (brew install jq)
 #   - CLOUDFLARE_TOKEN must be a Global API Key or have Pages:Edit + DNS:Edit scope.
 
