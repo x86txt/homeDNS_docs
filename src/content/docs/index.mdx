@@ -11,7 +11,7 @@ next: false
 
   <h1 id="overview" class="of-title"><span>homeDNS</span> docs</h1>
 
-  <div class="of-lead">Everything you need to install, configure, and operate homeDNS — a modern DNS platform with authoritative zones, conditional forwarding, filtering, and an operator-first management plane.</div>
+  <div class="of-lead">Everything you need to install, configure, and operate homeDNS — a modern DNS platform with authoritative zones, conditional forwarding, DNS filtering, DDNS, and an operator-first management plane.</div>
 
   <div class="of-stats">
     <div class="of-stat">
@@ -38,7 +38,7 @@ next: false
 
   <section class="of-group">
     <p class="of-group-kicker">[ 01 · Getting Started ]</p>
-    <div class="of-grid of-grid-two">
+    <div class="of-grid">
       <a class="of-item" href="#overview">
         <span class="of-item-index">01</span>
         <span class="of-item-copy">
@@ -49,15 +49,22 @@ next: false
       <a class="of-item" href="/guides/quick-start/">
         <span class="of-item-index">02</span>
         <span class="of-item-copy">
-          <span class="of-item-title">Getting Started</span>
-          <span class="of-item-desc">Installation, first run, local verification, and TLS test flow.</span>
+          <span class="of-item-title">Quick Start</span>
+          <span class="of-item-desc">Build, run, web admin, DNS smoke test, and TLS cert generation.</span>
         </span>
       </a>
       <a class="of-item" href="/guides/configuration/">
         <span class="of-item-index">03</span>
         <span class="of-item-copy">
           <span class="of-item-title">Configuration</span>
-          <span class="of-item-desc">YAML reference for listeners, forwarding, filtering, ACLs, and management.</span>
+          <span class="of-item-desc">Complete YAML reference — listeners, recursion, forwarding, filtering, ACLs, management.</span>
+        </span>
+      </a>
+      <a class="of-item" href="/guides/web-ui/">
+        <span class="of-item-index">04</span>
+        <span class="of-item-copy">
+          <span class="of-item-title">Web Admin Guide</span>
+          <span class="of-item-desc">Page-by-page tour — SimpleSet, Zones, Forwarders, Filter, DDNS, Users, Backup, and more.</span>
         </span>
       </a>
     </div>
@@ -70,21 +77,21 @@ next: false
         <span class="of-item-index">01</span>
         <span class="of-item-copy">
           <span class="of-item-title">Runbook</span>
-          <span class="of-item-desc">Health checks, day-2 ops, failure recovery, and backup guidance.</span>
+          <span class="of-item-desc">Health checks, day-2 tasks, failure recovery, backup, and upgrade procedures.</span>
         </span>
       </a>
       <a class="of-item" href="/operations/deployment/">
         <span class="of-item-index">02</span>
         <span class="of-item-copy">
           <span class="of-item-title">Deployment</span>
-          <span class="of-item-desc">Systemd, Docker, Kubernetes, and Cloudflare Pages docs deployment.</span>
+          <span class="of-item-desc">Systemd, Docker, Kubernetes, and production build instructions.</span>
         </span>
       </a>
       <a class="of-item" href="/operations/dynamic-dns/">
         <span class="of-item-index">03</span>
         <span class="of-item-copy">
           <span class="of-item-title">Dynamic DNS</span>
-          <span class="of-item-desc">RFC 2136 policies, TSIG, DHCP integration, and troubleshooting.</span>
+          <span class="of-item-desc">RFC 2136 policies, TSIG keys, ISC dhcpd and Microsoft DHCP integration.</span>
         </span>
       </a>
     </div>
@@ -93,25 +100,46 @@ next: false
   <section class="of-group">
     <p class="of-group-kicker">[ 03 · Reference ]</p>
     <div class="of-grid">
-      <a class="of-item" href="/reference/management-api/">
+      <a class="of-item" href="/reference/dns-features/">
         <span class="of-item-index">01</span>
         <span class="of-item-copy">
+          <span class="of-item-title">DNS Features</span>
+          <span class="of-item-desc">Protocols, authoritative zones, resolver pipeline, strategies, filtering, and cache.</span>
+        </span>
+      </a>
+      <a class="of-item" href="/reference/management-api/">
+        <span class="of-item-index">02</span>
+        <span class="of-item-copy">
           <span class="of-item-title">Management API</span>
-          <span class="of-item-desc">Auth model, endpoint groups, SSE channels, and wire-format notes.</span>
+          <span class="of-item-desc">Auth model, full endpoint index, SSE channels, and wire-format notes.</span>
+        </span>
+      </a>
+      <a class="of-item" href="/reference/cli/">
+        <span class="of-item-index">03</span>
+        <span class="of-item-copy">
+          <span class="of-item-title">CLI Reference</span>
+          <span class="of-item-desc">Complete dnsctl command tree — zones, records, forwarders, filter, TSIG, and TUI.</span>
         </span>
       </a>
       <a class="of-item" href="/reference/security-model/">
-        <span class="of-item-index">02</span>
+        <span class="of-item-index">04</span>
         <span class="of-item-copy">
           <span class="of-item-title">Security Model</span>
-          <span class="of-item-desc">Trust boundaries and controls across data plane and management plane.</span>
+          <span class="of-item-desc">Trust boundaries, ACL defaults, management-plane controls, and build-time checks.</span>
         </span>
       </a>
       <a class="of-item" href="/reference/release-checklist/">
-        <span class="of-item-index">03</span>
+        <span class="of-item-index">05</span>
         <span class="of-item-copy">
           <span class="of-item-title">Release Checklist</span>
-          <span class="of-item-desc">Build, security, and functional gates before release tags.</span>
+          <span class="of-item-desc">Build, security, functional, and documentation gates before release tags.</span>
+        </span>
+      </a>
+      <a class="of-item" href="/reference/glossary/">
+        <span class="of-item-index">06</span>
+        <span class="of-item-copy">
+          <span class="of-item-title">Glossary</span>
+          <span class="of-item-desc">Key terms — transports, strategies, filter actions, TSIG, SSE, and more.</span>
         </span>
       </a>
     </div>

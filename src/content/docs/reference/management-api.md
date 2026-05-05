@@ -1,48 +1,184 @@
 ---
 title: Management API
-description: Reference for the homeDNS management API surface.
+description: REST + SSE API reference for homeDNS — authentication, all endpoint groups, SSE channels, and wire-format notes.
 ---
 
-The management API is served from `/api/v1/*` (default bind: `127.0.0.1:8080`).
+import { Aside } from '@astrojs/starlight/components';
 
-It is the shared control surface used by:
+The management API is served from `/api/v1/*` on the management listener (default: `127.0.0.1:8080`). It is the shared control surface used by the web admin SPA, `dnsctl`, and operator automation.
 
-- `web-admin` GUI
-- `dnsctl` CLI/TUI
-- operator automation scripts
+The canonical REST contract is **`docs/openapi.yaml`** in the repo. TypeScript types for the web admin are generated from it via `make api-types`.
 
-## Authentication model
+<Aside type="note">
+When verifying a specific path for automation or documentation, confirm it is registered in the relevant `*_routes.go` file under `internal/api/`. The OpenAPI spec may describe endpoints ahead of their backend implementation.
+</Aside>
+
+---
+
+## Authentication
 
 Requests are gated in this order:
 
-1. CIDR allowlist (`management.allow_cidrs`)
-2. Session cookie (`homedns_session`) or bearer token
+1. **Network gate** — `management.allow_cidrs` in YAML; requests outside these CIDRs are rejected before any auth check.
+2. **Session cookie** — `homedns_session`, issued by `POST /auth/login`.
+3. **Bearer token** — `Authorization: Bearer <token>` for tokens minted via `POST /users/{id}/tokens`.
 
-Status codes:
+### Status codes
 
-- `401` missing/invalid credentials
-- `403` authenticated but insufficient role
-- `404` resource absent or hidden by feature gate
-- `409` conflict (for example, zone already exists)
-- `400` validation error
+| Code | Meaning |
+|------|---------|
+| `401` | Missing or invalid credentials |
+| `403` | Authenticated but role is insufficient |
+| `404` | Resource does not exist (or hidden by feature flag) |
+| `409` | Conflict — e.g. zone already exists |
+| `400` | Validation failure |
 
-## Major endpoint groups
+### Roles
 
-- `meta`: `/health`, `/version`
-- `zones` and `records`: zone + RR lifecycle
-- `forwarders`: upstream management and health stream
-- `filter`, `cache`, `ddns`
-- `queries` and `stats` SSE streams
-- `config`, `server`, `backup`, `metrics`
+| Role | Access |
+|------|--------|
+| `admin` | Full control, including user management |
+| `operator` | All DNS and config operations |
+| `viewer` | Read-only |
+
+---
+
+## Endpoint groups
+
+All paths below are relative to `/api/v1`.
+
+### Meta
+
+| Path | Method | Notes |
+|------|--------|-------|
+| `/health` | GET | Returns `{"status":"ok"}` when healthy |
+| `/version` | GET | Returns `version`, `buildTime`, `debug` |
+
+---
+
+### Zones
+
+| Path | Method | Notes |
+|------|--------|-------|
+| `/zones` | GET, POST | List all zones; create a zone |
+| `/zones/{zone}` | GET, DELETE | Fetch or delete a zone |
+| `/zones/{zone}/records` | GET, POST | List or add records (JSON, zone-file presentation) |
+| `/zones/{zone}/records` | DELETE | Delete a record |
+| `/zones/{zone}/import` | POST | Import raw RFC 1035 zone file (`text/plain` body) |
+| `/zones/{zone}/export` | GET | Download zone as `text/plain` zone file |
+| `/zones/{zone}/rrset` | GET | Fetch a specific RRset (verify implementation) |
+| `/zones/{zone}/serial/increment` | POST | Bump SOA serial (verify implementation) |
+
+---
+
+### Forwarders
+
+| Path | Method | Notes |
+|------|--------|-------|
+| `/forwarders` | GET, POST | List or create conditional forwarders |
+| `/forwarders/{id}` | GET, PUT, DELETE | Fetch, update, or delete a forwarder |
+| `/forwarders/health/stream` | GET (SSE) | Live health and latency updates — see [SSE channels](#sse-channels) |
+
+---
+
+### Filter
+
+| Path | Method | Notes |
+|------|--------|-------|
+| `/filter/sources` | GET, POST | List or add filter sources |
+| `/filter/sources/{id}` | GET, PUT, DELETE | Manage a specific source |
+| `/filter/sources/{id}/refresh` | POST | Force-refresh a specific list |
+| `/filter/policy` | GET, PUT | Get or update the global block policy |
+| `/filter/decide` | GET | Test a domain — `?name=ads.example.com` |
+| `/filter/refresh` | POST | Trigger a bulk refresh of all sources |
+
+---
+
+### Cache
+
+| Path | Method | Notes |
+|------|--------|-------|
+| `/cache/stats` | GET | Current cache statistics |
+| `/cache/flush` | POST | Flush all cached records |
+
+---
+
+### DDNS
+
+| Path | Method | Notes |
+|------|--------|-------|
+| `/ddns/tsig` | GET, POST | List or create TSIG keys |
+| `/ddns/tsig/{name}` | GET, DELETE | Fetch or delete a key |
+| `/ddns/policies` | GET | List all zone update policies |
+| `/ddns/policies/{zone}` | GET, PUT | Fetch or update policy for a zone |
+
+---
+
+### Queries
+
+| Path | Method | Notes |
+|------|--------|-------|
+| `/queries` | GET | Recent query log (paginated) |
+| `/queries/stream` | GET (SSE) | Live query log — see [SSE channels](#sse-channels) |
+
+---
+
+### Stats
+
+| Path | Method | Notes |
+|------|--------|-------|
+| `/stats` | GET | Snapshot of cache/filter/health aggregates |
+| `/stats/stream` | GET (SSE) | Rolling stats stream — see [SSE channels](#sse-channels) |
+
+---
+
+### Config
+
+| Path | Method | Notes |
+|------|--------|-------|
+| `/config/effective` | GET | Merged runtime config |
+| `/config/file` | GET | On-disk YAML config |
+
+---
+
+### Server
+
+| Path | Method | Notes |
+|------|--------|-------|
+| `/server/listeners` | GET | Active listener bindings and state |
+| `/server/reload` | POST | Trigger config reload |
+| `/server/probe/{forwarder_id}` | POST | Fire a manual health probe for a forwarder |
+
+---
+
+### Additional paths (OpenAPI-defined — verify implementation)
+
+The following paths are defined in `docs/openapi.yaml` but may be in varying states of implementation. Check `internal/api/` before building automation against them:
+
+- `/auth/login`, `/auth/logout`, `/auth/me`, `/sessions/*`
+- `/users/*`, `/tokens/*`
+- `/dnssec/*` (trust anchors, validator status)
+- `/acl` (DNS ACL config)
+- `/backup`, `/restore`
+- `/metrics` (Prometheus — roadmap item; use `/stats` in v1)
+
+---
 
 ## SSE channels
 
-- `/forwarders/health/stream` (`snapshot`, `health`)
-- `/queries/stream` (`query`)
-- `/stats/stream` (`stats`)
+All three streams use the `text/event-stream` content type. The client helper in the web admin is `web-admin/src/lib/api/sse.ts`.
+
+| Path | Event names | Payload description |
+|------|-------------|---------------------|
+| `/api/v1/forwarders/health/stream` | `snapshot`, `health` | Full snapshot on connect, then delta health updates per upstream |
+| `/api/v1/queries/stream` | `query` | One `QueryLogEntry` per resolved query |
+| `/api/v1/stats/stream` | `stats` | Nested `cache` / `filter` / `health` aggregate map |
+
+---
 
 ## Wire-format notes
 
-- Forwarding strategy and transport are serialized as strings
-- TLS runtime objects are not exposed directly on the wire
-- API-specific TLS knobs use explicit fields like `skip_tls_verify`
+- **Strategies and transports** are serialized as strings (`"parallel"`, `"dot"`, etc.). The Go enum values are integers internally; the JSON marshaling is frozen in the contracts package.
+- **TLS runtime objects** (`*tls.Config`) are not serialized. API-level TLS knobs use explicit fields: `skip_tls_verify`, `sni_override`.
+- **CA bundles and client certs** are addressed by ID once the cert manager API lands (roadmap).
+- **Records** use zone-file presentation format in both request and response bodies.

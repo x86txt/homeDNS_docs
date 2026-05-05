@@ -2,15 +2,20 @@
 # setup-cloudflare-pages.sh
 #
 # Creates the Cloudflare Pages project linked to x86txt/homeDNS_docs.
-# Requires CLOUDFLARE_TOKEN to be exported in the current shell, e.g.:
+# Requires CLOUDFLARE_TOKEN to be exported in the current shell.
+# For Global API Key auth, also export CLOUDFLARE_EMAIL, e.g.:
 #   export CLOUDFLARE_TOKEN="your_global_api_key"
+#   export CLOUDFLARE_EMAIL="you@example.com"
 #   bash scripts/setup-cloudflare-pages.sh
 #
 # Prerequisites:
 #   - The Cloudflare Pages GitHub App must be installed on x86txt's GitHub account.
 #     Install once at: https://github.com/apps/cloudflare-workers-and-pages
 #   - jq must be installed (brew install jq)
-#   - CLOUDFLARE_TOKEN must be a Global API Key or have Pages:Edit + DNS:Edit scope.
+#   - CLOUDFLARE_TOKEN must be either:
+#       1) an API token with Pages:Edit + DNS:Edit, or
+#       2) a Global API Key (with CLOUDFLARE_EMAIL set).
+# TODO: Replace Global API Key usage with a scoped API token after confirming exact required permissions.
 
 set -euo pipefail
 
@@ -30,17 +35,30 @@ if [[ -z "${CLOUDFLARE_TOKEN:-}" ]]; then
   exit 1
 fi
 
-AUTH_HEADER="Authorization: Bearer $CLOUDFLARE_TOKEN"
+AUTH_ARGS=()
 
 echo "▸ Verifying token …"
-VERIFY=$(curl -sf -H "$AUTH_HEADER" "$CF_API/user/tokens/verify" 2>/dev/null || true)
+VERIFY=$(curl -sf \
+  -H "Authorization: Bearer $CLOUDFLARE_TOKEN" \
+  "$CF_API/user/tokens/verify" 2>/dev/null || true)
 if echo "$VERIFY" | grep -q '"status":"active"'; then
   echo "  ✓ Token is active"
+  AUTH_ARGS=(-H "Authorization: Bearer $CLOUDFLARE_TOKEN")
 else
-  # Fall back to checking /user (Global API Keys report differently)
-  USER_CHECK=$(curl -sf -H "$AUTH_HEADER" "$CF_API/user" 2>/dev/null || true)
+  # Fall back to Global API Key auth.
+  if [[ -z "${CLOUDFLARE_EMAIL:-}" ]]; then
+    echo "✗ Token verify failed, and CLOUDFLARE_EMAIL is not set for Global API Key auth." >&2
+    echo "  Export CLOUDFLARE_EMAIL and retry." >&2
+    exit 1
+  fi
+
+  USER_CHECK=$(curl -sf \
+    -H "X-Auth-Email: $CLOUDFLARE_EMAIL" \
+    -H "X-Auth-Key: $CLOUDFLARE_TOKEN" \
+    "$CF_API/user" 2>/dev/null || true)
   if echo "$USER_CHECK" | grep -q '"success":true'; then
     echo "  ✓ Global API Key accepted"
+    AUTH_ARGS=(-H "X-Auth-Email: $CLOUDFLARE_EMAIL" -H "X-Auth-Key: $CLOUDFLARE_TOKEN")
   else
     echo "✗ Token appears invalid. Check CLOUDFLARE_TOKEN." >&2
     exit 1
@@ -49,7 +67,7 @@ fi
 
 # ── Resolve account ID ──────────────────────────────────────────────────────
 echo "▸ Fetching Cloudflare account …"
-ACCOUNTS=$(curl -sf -H "$AUTH_HEADER" "$CF_API/accounts")
+ACCOUNTS=$(curl -sf "${AUTH_ARGS[@]}" "$CF_API/accounts")
 ACCOUNT_ID=$(echo "$ACCOUNTS" | jq -r '.result[0].id')
 ACCOUNT_NAME=$(echo "$ACCOUNTS" | jq -r '.result[0].name')
 
@@ -64,7 +82,7 @@ echo "  ✓ Account: $ACCOUNT_NAME ($ACCOUNT_ID)"
 # ── Create Pages project ─────────────────────────────────────────────────────
 echo "▸ Creating Pages project '$PAGES_PROJECT' …"
 CREATE_RESP=$(curl -sf -X POST \
-  -H "$AUTH_HEADER" \
+  "${AUTH_ARGS[@]}" \
   -H "Content-Type: application/json" \
   "$CF_API/accounts/$ACCOUNT_ID/pages/projects" \
   -d "{
@@ -96,7 +114,7 @@ else
   # Project may already exist — check
   if echo "$CREATE_RESP" | grep -qi "already exists"; then
     echo "  ℹ Project '$PAGES_PROJECT' already exists, skipping creation"
-    PAGES_URL=$(curl -sf -H "$AUTH_HEADER" \
+    PAGES_URL=$(curl -sf "${AUTH_ARGS[@]}" \
       "$CF_API/accounts/$ACCOUNT_ID/pages/projects/$PAGES_PROJECT" \
       | jq -r '.result.subdomain')
   else
@@ -108,7 +126,7 @@ fi
 
 # ── Find Zone for docs.homedns.app ──────────────────────────────────────────
 echo "▸ Looking up zone for homedns.app …"
-ZONES=$(curl -sf -H "$AUTH_HEADER" "$CF_API/zones?name=homedns.app")
+ZONES=$(curl -sf "${AUTH_ARGS[@]}" "$CF_API/zones?name=homedns.app")
 ZONE_ID=$(echo "$ZONES" | jq -r '.result[0].id')
 
 if [[ -z "$ZONE_ID" || "$ZONE_ID" == "null" ]]; then
@@ -121,7 +139,7 @@ else
   echo "  ✓ Zone ID: $ZONE_ID"
 
   # Check if CNAME already exists
-  EXISTING=$(curl -sf -H "$AUTH_HEADER" \
+  EXISTING=$(curl -sf "${AUTH_ARGS[@]}" \
     "$CF_API/zones/$ZONE_ID/dns_records?type=CNAME&name=$DOMAIN")
   EXISTING_ID=$(echo "$EXISTING" | jq -r '.result[0].id // empty')
 
@@ -130,7 +148,7 @@ else
   else
     echo "▸ Adding CNAME $DOMAIN → $PAGES_URL …"
     CNAME_RESP=$(curl -sf -X POST \
-      -H "$AUTH_HEADER" \
+      "${AUTH_ARGS[@]}" \
       -H "Content-Type: application/json" \
       "$CF_API/zones/$ZONE_ID/dns_records" \
       -d "{
@@ -153,7 +171,7 @@ fi
 # ── Custom domain on Pages ───────────────────────────────────────────────────
 echo "▸ Attaching custom domain $DOMAIN to Pages project …"
 CUSTOM_RESP=$(curl -sf -X POST \
-  -H "$AUTH_HEADER" \
+  "${AUTH_ARGS[@]}" \
   -H "Content-Type: application/json" \
   "$CF_API/accounts/$ACCOUNT_ID/pages/projects/$PAGES_PROJECT/domains" \
   -d "{\"name\": \"$DOMAIN\"}")
