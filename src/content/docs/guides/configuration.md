@@ -1,33 +1,118 @@
 ---
-title: Configuration
-description: Configure listeners, forwarding, filtering, ACLs, and management access.
+title: Configuration Reference
+description: Complete YAML configuration reference for homeDNS — listeners, recursion, forwarding, filtering, ACLs, storage, and management.
 ---
 
-homeDNS loads YAML configuration from `--config`.
+import { Aside } from '@astrojs/starlight/components';
 
-## Core sections
+homeDNS reads a single YAML file passed via `--config`. Copy `config.example.yaml` from the repo root as your starting point.
 
-- `server`: instance name and data directory
-- `listeners`: Do53/DoT/DoH listener bindings
-- `tls`: cert and key files for encrypted transports
-- `recursion`: recursion safety limits
-- `forwarding` and `forwarders`: strategy and upstream settings
-- `filter`: block/allow behavior
-- `acl`: query and recursion CIDR rules
-- `management`: API bind and allowed CIDRs
+---
 
-## Example forwarders
+## `server`
+
+```yaml
+server:
+  name: homeDNS         # Display name — shown in web admin header
+  data_dir: ./data      # Base path for persistent storage (SQLite DB, etc.)
+```
+
+---
+
+## `listeners`
+
+Configures DNS wire-protocol endpoints. Each listener is independently toggled.
+
+```yaml
+listeners:
+  do53:
+    enabled: true
+    bind: ":53"          # Standard DNS; use ":5353" in dev to avoid privilege issues
+
+  dot:
+    enabled: false
+    bind: ":853"         # DNS over TLS — requires tls.cert_file + tls.key_file
+
+  doh:
+    enabled: false
+    bind: ":8443"        # DNS over HTTPS
+    path: /dns-query     # RFC 8484 path
+```
+
+<Aside type="note">
+DoQ (DNS over QUIC) and DoH3 (DNS over HTTP/3) are on the roadmap; confirm availability in your release's `README.md`.
+</Aside>
+
+---
+
+## `tls`
+
+Shared TLS material used by the DoT and DoH listeners.
+
+```yaml
+tls:
+  cert_file: ".certs/server.crt"
+  key_file:  ".certs/server.key"
+```
+
+See [Quick Start](/guides/quick-start/#6-generate-a-self-signed-tls-cert-dotdoh-testing) for generating a self-signed dev cert.
+
+---
+
+## `recursion`
+
+Controls the iterative recursive resolver built into `dnsd`.
+
+```yaml
+recursion:
+  enabled: true
+  max_queries:    50    # Max upstream queries per resolution
+  query_timeout:  3s    # Per-query timeout
+  max_cname_hops: 8     # CNAME chain limit (prevents infinite loops)
+  dnssec_validate: false # Enable DNSSEC validation (stub — full validation is v2)
+```
+
+<Aside type="caution">
+If `recursion.enabled` is `false` **and** no forwarders are configured, all queries for zones not hosted locally will return `SERVFAIL`.
+</Aside>
+
+---
+
+## `forwarding`
+
+Global defaults and health-probe settings for the forwarding engine.
+
+```yaml
+forwarding:
+  default_strategy: failover   # fallback strategy when no per-forwarder strategy is set
+
+  health:
+    slow_above:      20ms   # Upstream classified as "slow" above this RTT
+    failing_after:   3      # Consecutive probe failures before "failing" status
+    probe_interval:  30s    # Time between latency probes
+    probe_timeout:   2s     # Individual probe timeout
+    sample_window:   3      # Rolling window size for RTT averages
+```
+
+Health states: **healthy** (avg < `slow_above`, no errors), **slow** (avg ≥ `slow_above`), **failing** (last `failing_after` probes all errored). Failing upstreams are skipped by all strategies.
+
+---
+
+## `forwarders`
+
+Optional static upstream list. When `forwarders.servers` is populated, the runtime uses this YAML list. When empty, the runtime falls back to **API-stored conditional forwarders** created via the web UI or `dnsctl`.
 
 ```yaml
 forwarders:
-  contact_method: lowest_latency
+  contact_method: sequential   # How to pick from the server list (see below)
   servers:
     - id: cloudflare-dot
-      protocol: dot
+      protocol: dot            # do53 | dot | doh | doq | doh3
       address: "1.1.1.1:853"
-      dnssec: true
+      dnssec: true             # Forward DNSSEC DO-bit
       timeout: 2s
-      skip_tls_verify: false
+      skip_tls_verify: false   # Do not skip in production
+
     - id: cloudflare-doh
       protocol: doh
       address: "https://1.1.1.1/dns-query"
@@ -35,17 +120,119 @@ forwarders:
       timeout: 3s
 ```
 
-`contact_method` options:
+### `contact_method`
 
-- `sequential`
-- `parallel_first`
-- `lowest_latency`
+| Value | Behaviour |
+|-------|-----------|
+| `sequential` | Try servers in order; fall back on failure |
+| `parallel_first` | Race all servers; first valid response wins |
+| `lowest_latency` | Prefer server with lowest observed probe latency |
 
-## Security defaults
+---
 
-- Management API binds to `127.0.0.1:8080`
-- `management.allow_cidrs` defaults to loopback networks
-- Query/recursion access is ACL-gated
-- Rate limiting is enabled by default
+## `filter`
 
-For production hardening, review the [Security Model](/reference/security-model/).
+DNS blocking engine (Pi-hole / AdGuard Home style).
+
+```yaml
+filter:
+  enabled: true
+  default_refresh: 24h      # Interval between automatic list re-downloads
+
+  action: nxdomain          # Block action: nxdomain | nodata | sinkhole | refused | custom_cname
+
+  sinkhole_ipv4: 0.0.0.0   # Returned for A queries when action is "sinkhole"
+  sinkhole_ipv6: "::"       # Returned for AAAA queries when action is "sinkhole"
+  sinkhole_ttl:  60         # TTL of sinkhole responses
+```
+
+List sources (URLs, formats) are managed via the [Filter page](/guides/web-ui/#filter) in the web admin or `dnsctl filter`.
+
+---
+
+## `acl`
+
+CIDR-based access control for DNS queries.
+
+```yaml
+acl:
+  allow_query:              # Who may send any DNS query
+    - 0.0.0.0/0
+    - ::/0
+
+  allow_recurse:            # Who may trigger recursive resolution
+    - 127.0.0.0/8
+    - ::1/128
+    - 10.0.0.0/8
+    - 192.168.0.0/16
+    - 172.16.0.0/12
+```
+
+A separate deny list (`acl.deny_query`) can be defined to explicitly reject sources before the allow check.
+
+---
+
+## `rate_limit`
+
+Token-bucket per-source-IP rate limiting on the DNS data plane.
+
+```yaml
+rate_limit:
+  enabled: true
+  qps:    100     # Sustained queries per second per source IP
+  burst:  200     # Burst allowance above QPS
+  window: 1s      # Token refill window
+```
+
+---
+
+## `storage`
+
+Persistence backend for zones, forwarders, filter sources, DDNS policies, and users.
+
+```yaml
+storage:
+  driver: memory   # memory | sqlite
+  path: ""         # Path to SQLite DB file when driver is "sqlite"
+```
+
+- **`memory`** — all config is ephemeral; resets on restart. Good for testing.
+- **`sqlite`** — data survives restarts. Uses WAL mode; safe to copy the `.db` file for backups while the daemon is running.
+
+---
+
+## `management`
+
+The HTTP server that hosts the REST API and embedded web admin SPA.
+
+```yaml
+management:
+  enabled: true
+  bind: 127.0.0.1:8080        # Address to listen on — loopback by default
+  allow_cidrs:                 # Only these source IPs may reach the API
+    - 127.0.0.0/8
+    - ::1/128
+  debug: false                 # When true, raw error details surface in the web UI
+```
+
+<Aside type="caution">
+`management.allow_cidrs` is the primary security gate for the control plane. Do not expose the management port to untrusted networks without an authenticating reverse proxy. See [Security Model](/reference/security-model/).
+</Aside>
+
+`GET /api/v1/version` exposes the `debug` flag so the web UI can adjust its error display at bootstrap time.
+
+---
+
+## `logging`
+
+```yaml
+logging:
+  level:  info   # debug | info | warn | error
+  format: text   # text (human-readable) | json (structured, recommended for prod)
+```
+
+---
+
+## Hot reload
+
+homeDNS watches the config file for changes by default. Writing a new config in place triggers a reload without dropping active DNS connections. SIGHUP support is version-dependent — see `docs/RUNBOOK.md` for current behaviour.
