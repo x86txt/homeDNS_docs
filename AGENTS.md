@@ -10,6 +10,8 @@
 - Reset Starlight's default markdown sibling margins inside custom grids with `margin-top: 0 !important`
 - Right-rail column width must match left sidebar width (both `--sl-sidebar-width: 15rem`)
 - Use ItsHover icons throughout the site wherever icon UI is needed
+- In Astro standalone pages, import npm CSS packages (e.g. `@fontsource-variable/geist-mono`) in frontmatter — not `@import` in `<style>` — so Vite resolves asset paths
+- Use `<style is:global>` when JS dynamically creates DOM elements that need the CSS class styles
 
 ## Learned Workspace Facts
 
@@ -26,3 +28,4 @@
 - Custom domain `docs.homedns.app` is a CNAME in Cloudflare DNS pointing to the Pages project
 - Cloudflare Pages project name: `homedns-docs`; setup script at `scripts/setup-cloudflare-pages.sh`
 - Admin sidebar density: `--sl-sidebar-width: 15rem` (w-60) | header: `--sl-nav-height: 3.5rem` (h-14)
+- Custom 404 page: `src/pages/404.astro` — DOS BIOS boot animation ported from `web-admin/src/app/DosNotFoundPage.tsx`
