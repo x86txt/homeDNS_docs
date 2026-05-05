@@ -17,5 +17,11 @@ pnpm-debug.log*
 .env
 .env.production
 
+# editor/tool directories
+.cursor/
+.omc/
+.vscode/
+AGENTS.md
+
 # macOS-specific files
 .DS_Store
