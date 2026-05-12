@@ -7,7 +7,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 The management API is served from `/api/v1/*` on the management listener (default: `127.0.0.1:8080`). It is the shared control surface used by the web admin SPA, `dnsctl`, and operator automation.
 
-The canonical REST contract is **`docs/openapi.yaml`** in the repo. TypeScript types for the web admin are generated from it via `make api-types`.
+The canonical REST contract lives in the homeDNS source checkout at **`docs/openapi.yaml`**. TypeScript types for the web admin are generated from it via `make api-types`.
 
 <Aside type="note">
 When verifying a specific path for automation or documentation, confirm it is registered in the relevant `*_routes.go` file under `internal/api/`. The OpenAPI spec may describe endpoints ahead of their backend implementation.

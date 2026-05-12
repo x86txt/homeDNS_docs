@@ -31,7 +31,9 @@ Defaults:
 
 For exposure outside trusted networks, place an authenticating reverse proxy in front (mTLS, OIDC, or equivalent) and enforce strict CIDR policy.
 
-## Build-time and CI controls
+## Build-time and release controls
+
+The release checklist tracks the expected gates for source releases:
 
 - `go vet`
 - `go test -race`
@@ -39,3 +41,5 @@ For exposure outside trusted networks, place an authenticating reverse proxy in 
 - `semgrep p/owasp-top-ten`
 - `govulncheck`
 - resolver fuzz smoke tests
+
+See [Release Checklist](/reference/release-checklist/) for the full pre-tag review list.

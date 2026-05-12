@@ -40,7 +40,7 @@ Tune `Service` type, config, and `NetworkPolicy` for your environment.
 
 For this docs repository:
 
-- Build command: `pnpm build` (or `bun run build`)
+- Build command: `bun run build` (or `pnpm build`)
 - Output directory: `dist`
 - Production branch: `main`
 

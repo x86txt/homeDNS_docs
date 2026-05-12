@@ -1,6 +1,9 @@
 # homeDNS Docs
 
-Documentation site for the [homeDNS](https://github.com/x86txt/homeDNS) project, built with Astro + Starlight.
+Documentation site for the homeDNS project, built with Astro + Starlight.
+
+- Docs source: <https://github.com/x86txt/homeDNS_docs>
+- Project source: update this README and the site links when the public homeDNS repository URL is available.
 
 ## Local development
 
@@ -9,7 +12,10 @@ bun install
 bun run dev
 ```
 
-Or with pnpm:
+This repository is locked with `bun.lock`, and CI uses `bun install --frozen-lockfile`.
+Other package managers can be used for local experiments, but Bun is the reproducible path.
+
+Optional pnpm flow:
 
 ```bash
 pnpm install
@@ -19,19 +25,19 @@ pnpm dev
 ## Build
 
 ```bash
-pnpm build
+bun run build
 ```
 
-Alternative:
+Alternative with pnpm:
 
 ```bash
-bun run build
+pnpm build
 ```
 
 ## Cloudflare Pages deployment
 
 - Framework preset: Astro
-- Build command: `pnpm build` (or `bun run build`)
+- Build command: `bun run build` (or `pnpm build`)
 - Build output directory: `dist`
 - Production branch: `main`
 
